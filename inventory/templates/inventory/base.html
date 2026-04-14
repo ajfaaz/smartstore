@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SmartStore</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 220px;
+            background: #111827;
+            color: white;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .sidebar h2 {
+            color: #22c55e;
+        }
+
+        .sidebar a {
+            display: block;
+            color: #ccc;
+            padding: 10px;
+            text-decoration: none;
+            margin-top: 10px;
+            border-radius: 8px;
+        }
+
+        .sidebar a:hover {
+            background: #1f2937;
+            color: white;
+        }
+
+        .sidebar a.active {
+            background: #22c55e;
+            color: white;
+        }
+
+        .sidebar-link-btn {
+            display: block;
+            width: 100%;
+            background: none;
+            border: none;
+            color: #ccc;
+            padding: 10px;
+            text-align: left;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        .sidebar-link-btn:hover { background: #1f2937; color: white; }
+
+        .main {
+            flex: 1;
+            background: #f3f4f6;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .cards {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            width: 100%;
+            font-size: 18px;
+            background: #22c55e;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+
+        button:hover {
+            background: #16a34a;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .alert {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        th { background: #f9fafb; font-weight: bold; color: #374151; }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            display: inline-block;
+        }
+        .badge-success { background-color: #22c55e; }
+        .badge-warning { background-color: #f59e0b; }
+        .badge-danger { background-color: #dc2626; }
+    </style>
+</head>
+
+<body>
+
+<div class="sidebar">
+    <h2>SmartStore</h2>
+
+    {% if user.is_authenticated %}
+    <a href="/api/dashboard/" class="{% if '/dashboard/' in request.path %}active{% endif %}">📊 Dashboard</a>
+    <a href="/api/pos/" class="{% if '/pos/' in request.path %}active{% endif %}">🛒 POS</a>
+    <a href="/api/products/" class="{% if '/products/' in request.path %}active{% endif %}">📦 Products</a>
+    <a href="/api/sales/" class="{% if '/sales/' in request.path %}active{% endif %}">📈 Sales</a>
+    {% if user.is_superuser %}
+    <hr style="border-color: #374151; margin: 15px 0;">
+    <a href="/api/platform-admin/" class="{% if '/platform-admin/' in request.path %}active{% endif %}">🌐 Platform Admin</a>
+    {% endif %}
+    {% if user.is_staff %}
+    <hr style="border-color: #374151; margin: 15px 0;">
+    <a href="/api/admin-dashboard/" class="{% if '/admin-dashboard/' in request.path %}active{% endif %}">⚙️ Management</a>
+    {% endif %}
+    <form action="/accounts/logout/" method="post" style="margin: 0;">
+        {% csrf_token %}
+        <button type="submit" class="sidebar-link-btn">🚪 Logout</button>
+    </form>
+    {% endif %}
+</div>
+
+<div class="main">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

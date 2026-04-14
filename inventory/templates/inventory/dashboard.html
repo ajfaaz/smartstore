@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SmartStore Dashboard</title>
+    <style>
+        body {font-family: Arial, sans-serif; margin: 24px;}
+        .card {border: 1px solid #ddd; padding: 18px; border-radius: 8px; margin-bottom: 18px;}
+        .alert {background: #fff2f0; border-color: #ffcccc;}
+        table {width: 100%; border-collapse: collapse; margin-top: 12px;}
+        th, td {text-align: left; padding: 8px; border-bottom: 1px solid #eee;}
+    </style>
+</head>
+<body>
+    <h1>SmartStore Dashboard</h1>
+
+    <div class="card">
+        <h2>Total Products</h2>
+        <p>{{ total_products }}</p>
+    </div>
+
+    <div class="card">
+        <h2>Daily Sales</h2>
+        <p>Sales Today: {{ total_sales_today }}</p>
+        <p>Total Amount Today: {{ daily_sales_amount }}</p>
+    </div>
+
+    <div class="card alert">
+        <h2>Low Stock Alert</h2>
+        {% if low_stock %}
+            <p>{{ low_stock.count }} product(s) at or below threshold.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Threshold</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in low_stock %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.quantity }}</td>
+                        <td>{{ product.low_stock_threshold }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No low-stock products right now.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

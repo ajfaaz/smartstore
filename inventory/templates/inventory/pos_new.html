@@ -1,0 +1,211 @@
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+
+<div style="display: flex; gap: 20px;">
+    <div style="flex: 1;">
+        <div class="card">
+            <h2>🛒 Products</h2>
+            <input 
+                type="text" 
+                id="barcode-input" 
+                placeholder="Scan barcode..." 
+                autofocus 
+                style="width:100%; padding:15px; font-size:18px; margin-bottom: 10px; border: 2px solid #22c55e; border-radius: 8px; box-sizing: border-box;"
+            />
+            <input type="text" id="search" placeholder="Search products..." onkeyup="filterProducts()" />
+
+            <div id="product-list" style="max-height: 400px; overflow-y: auto;">
+                {% for product in products %}
+                    <div class="product {% if product.quantity == 0 %}out-of-stock{% endif %}"
+                         {% if product.quantity > 0 %}onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }})"{% endif %}
+                         style="border: 1px solid #ddd; margin: 5px; padding: 10px; cursor: pointer; background: #f9f9f9; border-radius: 4px;">
+                        <strong>{{ product.name }}</strong><br>
+                        <span style="color: #22c55e; font-weight: bold;">₦{{ product.price }}</span> | Stock: {{ product.quantity }}
+                        {% if product.quantity == 0 %}<br><em style="color: #dc2626;">OUT OF STOCK</em>{% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div style="flex: 1;">
+        <div class="card">
+            <h2>🛒 Shopping Cart</h2>
+            <div id="cart-items" style="min-height: 200px;"></div>
+
+            <hr style="margin: 15px 0;">
+            <h3>Total: <span id="total" style="color: #22c55e;">₦0</span></h3>
+
+            <button onclick="completeSale()">✓ Complete Sale</button>
+            <button onclick="clearCart()" class="btn-danger">✕ Clear Cart</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let cart = [];
+
+// Audio feedback for barcode scanning
+const scanSound = new Audio('https://assets.mixkit.co/active_storage/sfx/766/766-preview.mp3');
+
+function focusScanner() {
+    document.getElementById('barcode-input').focus();
+}
+
+function addToCart(id, name, price) {
+    let item = cart.find(p => p.id === id);
+
+    if (item) {
+        item.quantity += 1;
+    } else {
+        cart.push({id, name, price, quantity: 1});
+    }
+
+    renderCart();
+}
+
+function removeFromCart(id) {
+    cart = cart.filter(item => item.id !== id);
+    renderCart();
+}
+
+function updateQuantity(id, qty) {
+    let item = cart.find(p => p.id === id);
+    if (item) {
+        item.quantity = Math.max(1, qty);
+        renderCart();
+    }
+}
+
+function renderCart() {
+    let cartDiv = document.getElementById('cart-items');
+    cartDiv.innerHTML = "";
+
+    if (cart.length === 0) {
+        cartDiv.innerHTML = "<p style='color: #666; text-align: center; margin: 40px 0;'>Cart is empty</p>";
+        document.getElementById('total').innerText = "₦0";
+        return;
+    }
+
+    let total = 0;
+
+    cart.forEach(item => {
+        let itemTotal = item.price * item.quantity;
+        total += itemTotal;
+
+        cartDiv.innerHTML += `
+            <div class="cart-item" style="margin: 5px 0; padding: 8px; background: #e8f5e9; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>${item.name}</strong><br>
+                    ₦${item.price} x <input type="number" value="${item.quantity}" style="width: 50px;" onchange="updateQuantity(${item.id}, parseInt(this.value))" />
+                    = ₦${itemTotal}
+                </div>
+                <button style="padding: 4px 8px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="removeFromCart(${item.id})">Remove</button>
+            </div>
+        `;
+    });
+
+    document.getElementById('total').innerText = "₦" + total;
+}
+
+function clearCart() {
+    if (confirm("Clear the cart?")) {
+        cart = [];
+        renderCart();
+    }
+}
+
+function completeSale() {
+    if (cart.length === 0) {
+        alert("Cart is empty!");
+        return;
+    }
+
+    const requestData = {
+        items: cart.map(item => ({
+            product_id: item.id,
+            quantity: item.quantity
+        }))
+    };
+
+    console.log('Sending sale request:', requestData);
+
+    fetch('/api/sale/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(res => {
+        console.log('Response status:', res.status);
+        if (!res.ok) {
+            return res.text().then(text => { throw new Error(`HTTP ${res.status}: ${text}`); });
+        }
+        return res.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.error) {
+            alert("Error: " + data.error);
+        } else {
+            alert("Sale Completed!");
+            window.open(`/api/receipt/${data.sale_id}/`, '_blank');
+            cart = [];
+            renderCart();
+            focusScanner();
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert("Error: " + err.message);
+    });
+}
+
+document.getElementById('barcode-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        let barcode = e.target.value;
+        if (!barcode) return;
+
+        fetch(`/api/product-by-barcode/${barcode}/`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert("Product not found: " + barcode);
+            } else {
+                scanSound.play().catch(err => console.log("Audio playback delayed until user interaction."));
+                addToCart(data.id, data.name, data.price);
+            }
+            e.target.value = "";
+            focusScanner();
+        })
+        .catch(err => console.error('Error:', err));
+    }
+});
+
+function filterProducts() {
+    let input = document.getElementById("search").value.toLowerCase();
+    let products = document.querySelectorAll(".product");
+
+    products.forEach(p => {
+        p.style.display = p.innerText.toLowerCase().includes(input) ? "" : "none";
+    });
+}
+
+// Keep scanner focused even if user clicks elsewhere
+document.addEventListener('click', () => {
+    if(document.activeElement.tagName !== 'INPUT') focusScanner();
+});
+</script>
+
+<style>
+.product.out-of-stock {
+    background: #ffe6e6 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+}
+</style>
+
+{% endblock %}

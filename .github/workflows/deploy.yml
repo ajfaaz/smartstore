@@ -1,0 +1,52 @@
+name: Deploy to cPanel
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Django check
+        env:
+          SECRET_KEY: test-secret
+          DEBUG: "0"
+          ALLOWED_HOSTS: localhost,127.0.0.1
+        run: python manage.py check
+
+      - name: Deploy over SSH
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          port: ${{ secrets.CPANEL_PORT }}
+          script_stop: true
+          script: |
+            set -e
+            cd "${{ secrets.CPANEL_APP_PATH }}"
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+            "${{ secrets.CPANEL_VENV_PYTHON }}" -m pip install -r requirements.txt
+            "${{ secrets.CPANEL_VENV_PYTHON }}" manage.py migrate --noinput
+            "${{ secrets.CPANEL_VENV_PYTHON }}" manage.py collectstatic --noinput
+            touch passenger_wsgi.py

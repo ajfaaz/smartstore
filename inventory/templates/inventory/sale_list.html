@@ -1,0 +1,30 @@
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<h1>📈 Sales History</h1>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Staff</th>
+                <th>Total</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sale in sales %}
+            <tr>
+                <td>#{{ sale.id }}</td>
+                <td>{{ sale.created_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ sale.staff.username|default:"Unknown" }}</td>
+                <td>₦{{ sale.total_amount }}</td>
+                <td><a href="/api/receipt/{{ sale.id }}/" target="_blank" style="color: #22c55e; text-decoration: none; font-weight: bold;">📄 PDF Receipt</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

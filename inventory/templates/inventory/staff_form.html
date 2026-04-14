@@ -1,0 +1,34 @@
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<h1>{% if staff %}Edit Staff: {{ staff.username }}{% else %}Add New Staff Member{% endif %}</h1>
+
+<div class="card" style="max-width: 600px;">
+    <form method="post">
+        {% csrf_token %}
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            {% for field in form %}
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<small style="color: #666;">{{ field.help_text }}</small>{% endif %}
+                    {% if field.errors %}
+                        <div style="color: #dc2626; font-size: 14px;">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button type="submit">Save Staff</button>
+            <a href="/api/staff/" style="flex: 1; text-decoration: none;">
+                <button type="button" class="btn-danger">Cancel</button>
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    input:not([type="checkbox"]), select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+    input[type="checkbox"] { width: 20px; height: 20px; }
+</style>
+{% endblock %}

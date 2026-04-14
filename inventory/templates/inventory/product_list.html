@@ -1,0 +1,53 @@
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>📦 Products Inventory</h1>
+    {% if user.is_staff %}
+    <a href="/api/products/add/" style="text-decoration: none;">
+        <button style="width: auto; padding: 10px 20px;">+ Add Product</button>
+    </a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Barcode</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.name }}</td>
+                <td>{{ product.category }}</td>
+                <td>{{ product.barcode|default:"---" }}</td>
+                <td>₦{{ product.price }}</td>
+                <td>{{ product.quantity }}</td>
+                <td>
+                    {% if product.quantity <= 0 %}
+                        <span class="badge badge-danger">Out of Stock</span>
+                    {% elif product.quantity <= product.low_stock_threshold %}
+                        <span class="badge badge-warning">Low Stock</span>
+                    {% else %}
+                        <span class="badge badge-success">In Stock</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user.is_staff %}
+                    <a href="/api/products/edit/{{ product.id }}/" style="color: #22c55e; text-decoration: none;">✏️ Edit</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

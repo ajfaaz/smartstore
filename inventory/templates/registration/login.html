@@ -1,0 +1,31 @@
+{% extends "inventory/base.html" %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 80px auto;">
+    <div class="card">
+        <h2 style="text-align: center; color: #22c55e;">🔐 SmartStore Login</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Username</label>
+                <input type="text" name="username" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Password</label>
+                <input type="password" name="password" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+            </div>
+            {% if form.errors %}
+                <p style="color: #dc2626; font-size: 14px; text-align: center;">❌ Invalid username or password.</p>
+            {% endif %}
+            <button type="submit">Sign In</button>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Hide sidebar on login page for a cleaner look */
+    .sidebar { display: none !important; }
+    body { background: #f3f4f6; }
+    .main { padding: 0; }
+</style>
+{% endblock %}

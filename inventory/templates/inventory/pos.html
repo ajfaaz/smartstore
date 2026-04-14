@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SmartStore POS</title>
+    <style>
+        body { font-family: Arial; display: flex; margin: 0; }
+        .products, .cart { padding: 20px; width: 50%; }
+        .product { border: 1px solid #ccc; margin: 5px; padding: 10px; cursor: pointer; background: #f9f9f9; border-radius: 4px; }
+        .product:hover { background: #f0f0f0; }
+        .product.out-of-stock { background: #ffe6e6; cursor: not-allowed; opacity: 0.6; }
+        .cart-item { margin: 5px 0; padding: 8px; background: #e8f5e9; border-radius: 4px; }
+        button { padding: 10px; margin-top: 10px; background: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #45a049; }
+        input { width: 95%; padding: 8px; margin-bottom: 10px; }
+        #total { font-size: 24px; font-weight: bold; color: #2196F3; }
+    </style>
+</head>
+<body>
+
+<div class="products">
+    <h2>Products</h2>
+    <input type="text" id="search" placeholder="Search..." onkeyup="filterProducts()" />
+
+    <div id="product-list">
+        {% for product in products %}
+            <div class="product {% if product.quantity == 0 %}out-of-stock{% endif %}"
+                 {% if product.quantity > 0 %}onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }})"{% endif %}>
+                <strong>{{ product.name }}</strong><br>
+                ₦{{ product.price }} | Stock: {{ product.quantity }}
+                {% if product.quantity == 0 %}<br><em style="color: red;">OUT OF STOCK</em>{% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="cart">
+    <h2>Shopping Cart</h2>
+    <div id="cart-items"></div>
+
+    <hr>
+    <h3>Total: ₦<span id="total">0</span></h3>
+    <button onclick="completeSale()">✓ Complete Sale</button>
+    <button onclick="clearCart()" style="background: #f44336;">✕ Clear Cart</button>
+</div>
+
+<script>
+let cart = [];
+
+function addToCart(id, name, price) {
+    let item = cart.find(p => p.id === id);
+
+    if (item) {
+        item.quantity += 1;
+    } else {
+        cart.push({id, name, price, quantity: 1});
+    }
+
+    renderCart();
+}
+
+function removeFromCart(id) {
+    cart = cart.filter(item => item.id !== id);
+    renderCart();
+}
+
+function updateQuantity(id, qty) {
+    let item = cart.find(p => p.id === id);
+    if (item) {
+        item.quantity = Math.max(1, qty);
+        renderCart();
+    }
+}
+
+function renderCart() {
+    let cartDiv = document.getElementById('cart-items');
+    cartDiv.innerHTML = "";
+
+    if (cart.length === 0) {
+        cartDiv.innerHTML = "<p style='color: #999;'>Cart is empty</p>";
+        document.getElementById('total').innerText = "0";
+        return;
+    }
+
+    let total = 0;
+
+    cart.forEach(item => {
+        let itemTotal = item.price * item.quantity;
+        total += itemTotal;
+
+        cartDiv.innerHTML += `
+            <div class="cart-item">
+                <strong>${item.name}</strong><br>
+                ₦${item.price} x <input type="number" value="${item.quantity}" style="width: 40px;" onchange="updateQuantity(${item.id}, parseInt(this.value))" /> 
+                = ₦${itemTotal}
+                <button style="padding: 4px 8px; margin-left: 10px;" onclick="removeFromCart(${item.id})">Remove</button>
+            </div>
+        `;
+    });
+
+    document.getElementById('total').innerText = total;
+}
+
+function clearCart() {
+    if (confirm("Clear the cart?")) {
+        cart = [];
+        renderCart();
+    }
+}
+
+function completeSale() {
+    if (cart.length === 0) {
+        alert("Cart is empty!");
+        return;
+    }
+
+    const requestData = {
+        items: cart.map(item => ({
+            product_id: item.id,
+            quantity: item.quantity
+        }))
+    };
+
+    console.log('Sending sale request:', requestData);
+
+    fetch('/api/sale/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(requestData)
+    })
+    .then(res => {
+        console.log('Response status:', res.status);
+        if (!res.ok) {
+            return res.text().then(text => { throw new Error(`HTTP ${res.status}: ${text}`); });
+        }
+        return res.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.error) {
+            alert("Error: " + data.error);
+        } else {
+            const receipt = `🧾 RECEIPT\n\n${cart.map(item => `${item.name} x${item.quantity} = ₦${item.price * item.quantity}`).join('\n')}\n\nTotal: ₦${data.total}\n\nThank you for your business!`;
+            alert(receipt);
+            cart = [];
+            renderCart();
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert("Error: " + err.message);
+    });
+}
+
+function filterProducts() {
+    let input = document.getElementById("search").value.toLowerCase();
+    let products = document.querySelectorAll(".product");
+
+    products.forEach(p => {
+        p.style.display = p.innerText.toLowerCase().includes(input) ? "" : "none";
+    });
+}
+</script>
+
+</body>
+</html>
