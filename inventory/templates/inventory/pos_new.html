@@ -183,6 +183,8 @@ let cameraStream = null;
 let barcodeDetector = null;
 let cameraRunning = false;
 let html5QrScanner = null;
+const shouldAutoStartOnMobile = window.matchMedia('(max-width: 900px)').matches;
+const scanRequested = new URLSearchParams(window.location.search).get('scan') === '1';
 
 const barcodeInput = document.getElementById('barcode-input');
 const cameraStatus = document.getElementById('camera-status');
@@ -446,10 +448,20 @@ function stopCameraScanner() {
 
 startCameraBtn.addEventListener('click', startCameraScanner);
 stopCameraBtn.addEventListener('click', stopCameraScanner);
+window.addEventListener('smartstore-open-scanner', startCameraScanner);
 
 document.addEventListener('click', (event) => {
     if (event.target.tagName !== 'INPUT') {
         focusScanner();
+    }
+});
+
+window.addEventListener('load', () => {
+    focusScanner();
+    if (shouldAutoStartOnMobile || scanRequested) {
+        setTimeout(() => {
+            startCameraScanner();
+        }, 350);
     }
 });
 

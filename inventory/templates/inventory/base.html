@@ -155,6 +155,24 @@
             background: #22c55e;
         }
 
+        .mobile-topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mobile-scan-btn {
+            width: auto;
+            margin: 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
         @media (max-width: 900px) {
             body {
                 display: block;
@@ -199,7 +217,12 @@
 
 <div class="mobile-topbar">
     <strong>SmartStore</strong>
-    <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()">Menu</button>
+    <div class="mobile-topbar-actions">
+        {% if user.is_authenticated %}
+        <button type="button" class="mobile-scan-btn" onclick="openGlobalScanner()">Scan</button>
+        {% endif %}
+        <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()">Menu</button>
+    </div>
 </div>
 
 <div class="sidebar" id="sidebar">
@@ -210,6 +233,7 @@
     <a href="/api/pos/" class="{% if '/pos/' in request.path %}active{% endif %}">🛒 POS</a>
     <a href="/api/products/" class="{% if '/products/' in request.path %}active{% endif %}">📦 Products</a>
     <a href="/api/sales/" class="{% if '/sales/' in request.path %}active{% endif %}">📈 Sales</a>
+    <a href="/api/pos/?scan=1">📷 Quick Scan</a>
     {% if user.is_superuser %}
     <hr style="border-color: #374151; margin: 15px 0;">
     <a href="/api/platform-admin/" class="{% if '/platform-admin/' in request.path %}active{% endif %}">🌐 Platform Admin</a>
@@ -233,6 +257,14 @@
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     sidebar.classList.toggle('open');
+}
+
+function openGlobalScanner() {
+    if (window.location.pathname.includes('/api/pos/')) {
+        window.dispatchEvent(new CustomEvent('smartstore-open-scanner'));
+        return;
+    }
+    window.location.href = '/api/pos/?scan=1';
 }
 
 document.addEventListener('click', function (event) {
