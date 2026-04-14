@@ -1,25 +1,158 @@
 {% extends 'inventory/base.html' %}
 
 {% block content %}
+<script src="https://unpkg.com/html5-qrcode" defer></script>
 
-<div style="display: flex; gap: 20px;">
-    <div style="flex: 1;">
+<style>
+.pos-layout {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 16px;
+}
+
+.scan-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.scan-controls button {
+    width: auto;
+    padding: 10px 14px;
+    margin: 0;
+    font-size: 14px;
+}
+
+.camera-wrap {
+    display: none;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 8px;
+    margin-bottom: 10px;
+    background: #000;
+}
+
+.camera-wrap video {
+    width: 100%;
+    border-radius: 10px;
+    max-height: 260px;
+    object-fit: cover;
+}
+
+#qr-reader {
+    display: none;
+    background: #fff;
+    border-radius: 10px;
+    padding: 8px;
+}
+
+.product-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.product {
+    border: 1px solid #ddd;
+    margin: 5px;
+    padding: 10px;
+    cursor: pointer;
+    background: #f9f9f9;
+    border-radius: 6px;
+}
+
+.product.out-of-stock {
+    background: #ffe6e6 !important;
+    cursor: not-allowed !important;
+    opacity: 0.65;
+}
+
+.barcode-input {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    margin-bottom: 10px;
+    border: 2px solid #22c55e;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.cart-items {
+    min-height: 200px;
+}
+
+.cart-item {
+    margin: 5px 0;
+    padding: 8px;
+    background: #e8f5e9;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.cart-item input[type="number"] {
+    width: 56px;
+}
+
+.remove-btn {
+    padding: 6px 10px;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+@media (max-width: 900px) {
+    .pos-layout {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .camera-wrap video {
+        max-height: 220px;
+    }
+}
+</style>
+
+<div class="pos-layout">
+    <div>
         <div class="card">
-            <h2>🛒 Products</h2>
-            <input 
-                type="text" 
-                id="barcode-input" 
-                placeholder="Scan barcode..." 
-                autofocus 
-                style="width:100%; padding:15px; font-size:18px; margin-bottom: 10px; border: 2px solid #22c55e; border-radius: 8px; box-sizing: border-box;"
-            />
-            <input type="text" id="search" placeholder="Search products..." onkeyup="filterProducts()" />
+            <h2>Products</h2>
 
-            <div id="product-list" style="max-height: 400px; overflow-y: auto;">
+            <div class="scan-controls">
+                <button type="button" id="start-camera-btn">Start Camera Scanner</button>
+                <button type="button" id="stop-camera-btn" class="btn-danger" style="display:none;">Stop Camera</button>
+            </div>
+            <div id="camera-status" style="font-size: 13px; color: #374151; margin-bottom: 8px;"></div>
+
+            <div id="camera-wrap" class="camera-wrap">
+                <video id="camera-preview" playsinline></video>
+            </div>
+
+            <input
+                type="text"
+                id="barcode-input"
+                placeholder="Scan barcode or type manually..."
+                autofocus
+                class="barcode-input"
+            />
+            <input type="text" id="search" class="search-input" placeholder="Search products..." onkeyup="filterProducts()" />
+
+            <div id="product-list" class="product-list">
                 {% for product in products %}
                     <div class="product {% if product.quantity == 0 %}out-of-stock{% endif %}"
-                         {% if product.quantity > 0 %}onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }})"{% endif %}
-                         style="border: 1px solid #ddd; margin: 5px; padding: 10px; cursor: pointer; background: #f9f9f9; border-radius: 4px;">
+                         {% if product.quantity > 0 %}onclick="addToCart({{ product.id }}, '{{ product.name|escapejs }}', {{ product.price }})"{% endif %}>
                         <strong>{{ product.name }}</strong><br>
                         <span style="color: #22c55e; font-weight: bold;">₦{{ product.price }}</span> | Stock: {{ product.quantity }}
                         {% if product.quantity == 0 %}<br><em style="color: #dc2626;">OUT OF STOCK</em>{% endif %}
@@ -29,39 +162,52 @@
         </div>
     </div>
 
-    <div style="flex: 1;">
+    <div>
         <div class="card">
-            <h2>🛒 Shopping Cart</h2>
-            <div id="cart-items" style="min-height: 200px;"></div>
+            <h2>Shopping Cart</h2>
+            <div id="cart-items" class="cart-items"></div>
 
             <hr style="margin: 15px 0;">
             <h3>Total: <span id="total" style="color: #22c55e;">₦0</span></h3>
 
-            <button onclick="completeSale()">✓ Complete Sale</button>
-            <button onclick="clearCart()" class="btn-danger">✕ Clear Cart</button>
+            <button onclick="completeSale()">Complete Sale</button>
+            <button onclick="clearCart()" class="btn-danger">Clear Cart</button>
         </div>
     </div>
 </div>
 
 <script>
 let cart = [];
+let scannerInterval = null;
+let cameraStream = null;
+let barcodeDetector = null;
+let cameraRunning = false;
+let html5QrScanner = null;
 
-// Audio feedback for barcode scanning
+const barcodeInput = document.getElementById('barcode-input');
+const cameraStatus = document.getElementById('camera-status');
+const cameraWrap = document.getElementById('camera-wrap');
+const cameraPreview = document.getElementById('camera-preview');
+const startCameraBtn = document.getElementById('start-camera-btn');
+const stopCameraBtn = document.getElementById('stop-camera-btn');
+
 const scanSound = new Audio('https://assets.mixkit.co/active_storage/sfx/766/766-preview.mp3');
 
 function focusScanner() {
-    document.getElementById('barcode-input').focus();
+    barcodeInput.focus();
+}
+
+function setCameraStatus(message) {
+    cameraStatus.innerText = message;
 }
 
 function addToCart(id, name, price) {
-    let item = cart.find(p => p.id === id);
-
+    const item = cart.find(p => p.id === id);
     if (item) {
         item.quantity += 1;
     } else {
         cart.push({id, name, price, quantity: 1});
     }
-
     renderCart();
 }
 
@@ -71,7 +217,7 @@ function removeFromCart(id) {
 }
 
 function updateQuantity(id, qty) {
-    let item = cart.find(p => p.id === id);
+    const item = cart.find(p => p.id === id);
     if (item) {
         item.quantity = Math.max(1, qty);
         renderCart();
@@ -79,7 +225,7 @@ function updateQuantity(id, qty) {
 }
 
 function renderCart() {
-    let cartDiv = document.getElementById('cart-items');
+    const cartDiv = document.getElementById('cart-items');
     cartDiv.innerHTML = "";
 
     if (cart.length === 0) {
@@ -89,19 +235,18 @@ function renderCart() {
     }
 
     let total = 0;
-
     cart.forEach(item => {
-        let itemTotal = item.price * item.quantity;
+        const itemTotal = item.price * item.quantity;
         total += itemTotal;
 
         cartDiv.innerHTML += `
-            <div class="cart-item" style="margin: 5px 0; padding: 8px; background: #e8f5e9; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="cart-item">
                 <div>
                     <strong>${item.name}</strong><br>
-                    ₦${item.price} x <input type="number" value="${item.quantity}" style="width: 50px;" onchange="updateQuantity(${item.id}, parseInt(this.value))" />
+                    ₦${item.price} x <input type="number" value="${item.quantity}" min="1" onchange="updateQuantity(${item.id}, parseInt(this.value || '1', 10))" />
                     = ₦${itemTotal}
                 </div>
-                <button style="padding: 4px 8px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="removeFromCart(${item.id})">Remove</button>
+                <button type="button" class="remove-btn" onclick="removeFromCart(${item.id})">Remove</button>
             </div>
         `;
     });
@@ -129,8 +274,6 @@ function completeSale() {
         }))
     };
 
-    console.log('Sending sale request:', requestData);
-
     fetch('/api/sale/', {
         method: 'POST',
         headers: {
@@ -140,72 +283,177 @@ function completeSale() {
         body: JSON.stringify(requestData)
     })
     .then(res => {
-        console.log('Response status:', res.status);
         if (!res.ok) {
             return res.text().then(text => { throw new Error(`HTTP ${res.status}: ${text}`); });
         }
         return res.json();
     })
     .then(data => {
-        console.log('Response data:', data);
         if (data.error) {
             alert("Error: " + data.error);
-        } else {
-            alert("Sale Completed!");
-            window.open(`/api/receipt/${data.sale_id}/`, '_blank');
-            cart = [];
-            renderCart();
-            focusScanner();
+            return;
         }
+        alert("Sale Completed!");
+        window.open(`/api/receipt/${data.sale_id}/`, '_blank');
+        cart = [];
+        renderCart();
+        focusScanner();
     })
     .catch(err => {
-        console.error('Error:', err);
         alert("Error: " + err.message);
     });
 }
 
-document.getElementById('barcode-input').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        let barcode = e.target.value;
-        if (!barcode) return;
-
-        fetch(`/api/product-by-barcode/${barcode}/`)
+function processBarcode(barcode) {
+    if (!barcode) return;
+    fetch(`/api/product-by-barcode/${encodeURIComponent(barcode)}/`)
         .then(res => res.json())
         .then(data => {
             if (data.error) {
                 alert("Product not found: " + barcode);
             } else {
-                scanSound.play().catch(err => console.log("Audio playback delayed until user interaction."));
+                scanSound.play().catch(() => {});
                 addToCart(data.id, data.name, data.price);
             }
-            e.target.value = "";
+            barcodeInput.value = "";
             focusScanner();
         })
-        .catch(err => console.error('Error:', err));
+        .catch(() => {
+            alert("Could not read product barcode.");
+        });
+}
+
+barcodeInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        processBarcode(e.target.value.trim());
     }
 });
 
 function filterProducts() {
-    let input = document.getElementById("search").value.toLowerCase();
-    let products = document.querySelectorAll(".product");
-
+    const input = document.getElementById("search").value.toLowerCase();
+    const products = document.querySelectorAll(".product");
     products.forEach(p => {
         p.style.display = p.innerText.toLowerCase().includes(input) ? "" : "none";
     });
 }
 
-// Keep scanner focused even if user clicks elsewhere
-document.addEventListener('click', () => {
-    if(document.activeElement.tagName !== 'INPUT') focusScanner();
-});
-</script>
+async function startCameraScanner() {
+    if (cameraRunning) return;
 
-<style>
-.product.out-of-stock {
-    background: #ffe6e6 !important;
-    cursor: not-allowed !important;
-    opacity: 0.6;
+    if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        setCameraStatus("Camera needs HTTPS. Open this page with HTTPS on production.");
+        return;
+    }
+
+    if (!('BarcodeDetector' in window)) {
+        if (!window.Html5Qrcode) {
+            setCameraStatus("Camera scanner is not supported on this browser. Use manual barcode input.");
+            return;
+        }
+
+        try {
+            cameraWrap.style.display = 'none';
+            let qrReader = document.getElementById('qr-reader');
+            if (!qrReader) {
+                qrReader = document.createElement('div');
+                qrReader.id = 'qr-reader';
+                qrReader.style.display = 'block';
+                document.getElementById('camera-wrap').insertAdjacentElement('afterend', qrReader);
+            } else {
+                qrReader.style.display = 'block';
+                qrReader.innerHTML = '';
+            }
+
+            html5QrScanner = new Html5Qrcode('qr-reader');
+            await html5QrScanner.start(
+                { facingMode: 'environment' },
+                { fps: 10, qrbox: { width: 250, height: 140 } },
+                (decodedText) => {
+                    processBarcode(decodedText);
+                },
+                () => {}
+            );
+
+            startCameraBtn.style.display = 'none';
+            stopCameraBtn.style.display = 'inline-block';
+            setCameraStatus("Camera active. Point camera at barcode.");
+            cameraRunning = true;
+            return;
+        } catch (_) {
+            setCameraStatus("Could not access camera. Please allow permission and try again.");
+            return;
+        }
+    }
+
+    try {
+        barcodeDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'] });
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' } },
+            audio: false
+        });
+        cameraPreview.srcObject = cameraStream;
+        await cameraPreview.play();
+
+        cameraWrap.style.display = 'block';
+        startCameraBtn.style.display = 'none';
+        stopCameraBtn.style.display = 'inline-block';
+        setCameraStatus("Camera active. Point camera at barcode.");
+        cameraRunning = true;
+
+        scannerInterval = setInterval(async () => {
+            if (!cameraRunning || cameraPreview.readyState < 2) return;
+            try {
+                const detected = await barcodeDetector.detect(cameraPreview);
+                if (detected && detected.length > 0) {
+                    const code = detected[0].rawValue;
+                    if (code) {
+                        processBarcode(code);
+                    }
+                }
+            } catch (_) {}
+        }, 450);
+    } catch (error) {
+        setCameraStatus("Could not access camera. Please allow permission and use HTTPS.");
+    }
 }
-</style>
+
+function stopCameraScanner() {
+    cameraRunning = false;
+    if (scannerInterval) {
+        clearInterval(scannerInterval);
+        scannerInterval = null;
+    }
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+    cameraPreview.srcObject = null;
+    cameraWrap.style.display = 'none';
+
+    if (html5QrScanner) {
+        html5QrScanner.stop().catch(() => {}).finally(() => {
+            html5QrScanner.clear().catch(() => {});
+            html5QrScanner = null;
+            const qrReader = document.getElementById('qr-reader');
+            if (qrReader) qrReader.style.display = 'none';
+        });
+    }
+
+    startCameraBtn.style.display = 'inline-block';
+    stopCameraBtn.style.display = 'none';
+    setCameraStatus("Camera scanner stopped.");
+}
+
+startCameraBtn.addEventListener('click', startCameraScanner);
+stopCameraBtn.addEventListener('click', stopCameraScanner);
+
+document.addEventListener('click', (event) => {
+    if (event.target.tagName !== 'INPUT') {
+        focusScanner();
+    }
+});
+
+window.addEventListener('beforeunload', stopCameraScanner);
+</script>
 
 {% endblock %}

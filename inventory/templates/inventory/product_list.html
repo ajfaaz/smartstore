@@ -1,7 +1,23 @@
 {% extends 'inventory/base.html' %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center;">
+<style>
+.page-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.table-wrap {
+    overflow-x: auto;
+}
+@media (max-width: 900px) {
+    h1 { font-size: 24px; margin: 8px 0; }
+}
+</style>
+
+<div class="page-head">
     <h1>📦 Products Inventory</h1>
     {% if user.is_staff %}
     <a href="/api/products/add/" style="text-decoration: none;">
@@ -11,6 +27,7 @@
 </div>
 
 <div class="card">
+    <div class="table-wrap">
     <table>
         <thead>
             <tr>
@@ -49,5 +66,6 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endblock %}

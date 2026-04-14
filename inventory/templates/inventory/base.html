@@ -10,6 +10,7 @@
             margin: 0;
             font-family: Arial;
             display: flex;
+            background: #f3f4f6;
         }
 
         .sidebar {
@@ -61,7 +62,6 @@
 
         .main {
             flex: 1;
-            background: #f3f4f6;
             padding: 20px;
         }
 
@@ -133,12 +133,76 @@
         .badge-success { background-color: #22c55e; }
         .badge-warning { background-color: #f59e0b; }
         .badge-danger { background-color: #dc2626; }
+
+        .mobile-topbar {
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 1100;
+            background: #111827;
+            color: white;
+            padding: 10px 14px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mobile-menu-btn {
+            width: auto;
+            margin: 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #22c55e;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                display: block;
+            }
+
+            .mobile-topbar {
+                display: flex;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                z-index: 1200;
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                box-sizing: border-box;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main {
+                padding: 14px;
+            }
+
+            .card {
+                margin: 8px 0;
+            }
+
+            th, td {
+                padding: 10px 8px;
+                font-size: 13px;
+            }
+        }
     </style>
 </head>
 
 <body>
 
-<div class="sidebar">
+<div class="mobile-topbar">
+    <strong>SmartStore</strong>
+    <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()">Menu</button>
+</div>
+
+<div class="sidebar" id="sidebar">
     <h2>SmartStore</h2>
 
     {% if user.is_authenticated %}
@@ -164,6 +228,21 @@
 <div class="main">
     {% block content %}{% endblock %}
 </div>
+
+<script>
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('open');
+}
+
+document.addEventListener('click', function (event) {
+    const sidebar = document.getElementById('sidebar');
+    if (window.innerWidth > 900 || !sidebar.classList.contains('open')) return;
+    if (sidebar.contains(event.target)) return;
+    if (event.target.closest('.mobile-menu-btn')) return;
+    sidebar.classList.remove('open');
+});
+</script>
 
 </body>
 </html>

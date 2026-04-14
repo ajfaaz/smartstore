@@ -1,6 +1,18 @@
 {% extends 'inventory/base.html' %}
 
 {% block content %}
+<style>
+.cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+@media (max-width: 1000px) {
+    .cards {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 
 <h1>Dashboard</h1>
 

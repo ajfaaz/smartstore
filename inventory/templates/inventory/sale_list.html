@@ -1,9 +1,19 @@
 {% extends 'inventory/base.html' %}
 
 {% block content %}
+<style>
+.table-wrap {
+    overflow-x: auto;
+}
+@media (max-width: 900px) {
+    h1 { font-size: 24px; margin: 8px 0; }
+}
+</style>
+
 <h1>📈 Sales History</h1>
 
 <div class="card">
+    <div class="table-wrap">
     <table>
         <thead>
             <tr>
@@ -26,5 +36,6 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endblock %}
