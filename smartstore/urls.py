@@ -16,10 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 
 def home(request):
-    return redirect('/api/dashboard/')
+    if request.user.is_authenticated:
+        return redirect('/api/dashboard/')
+    return render(request, 'inventory/home_public.html')
 
 urlpatterns = [
     path('', home),
