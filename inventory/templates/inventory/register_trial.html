@@ -1,0 +1,46 @@
+{% extends "inventory/base.html" %}
+
+{% block content %}
+<div style="max-width: 520px; margin: 40px auto;">
+    <div class="card">
+        <h2 style="text-align: center; color: #0f9d58;">Start 7-Day Free Trial</h2>
+        <p style="text-align: center; color: #64748b;">No card required to begin.</p>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <label>Business Name</label>
+            <input type="text" name="business_name" required style="width:100%;padding:10px;margin:6px 0 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+
+            <label>Username</label>
+            <input type="text" name="username" required style="width:100%;padding:10px;margin:6px 0 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+
+            <label>Email</label>
+            <input type="email" name="email" required style="width:100%;padding:10px;margin:6px 0 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+
+            <label>Password</label>
+            <input type="password" name="password" required style="width:100%;padding:10px;margin:6px 0 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+
+            <label>Confirm Password</label>
+            <input type="password" name="confirm_password" required style="width:100%;padding:10px;margin:6px 0 12px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;">
+
+            {% if form.errors %}
+            <div style="background:#fff1f2;color:#be123c;padding:10px;border-radius:8px;margin:8px 0;">
+                Please fix the highlighted fields and try again.
+            </div>
+            {% endif %}
+
+            <button type="submit">Create Trial Account</button>
+        </form>
+        <p style="text-align:center;margin-top:10px;">
+            Already have an account? <a href="/accounts/login/">Sign in</a>
+        </p>
+    </div>
+</div>
+
+<style>
+    .sidebar { display: none !important; }
+    body { background: #f3f4f6; }
+    .main { padding: 0; }
+</style>
+{% endblock %}

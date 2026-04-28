@@ -1,5 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
+
+
+SUBSCRIPTION_PLAN_CHOICES = [
+    ("trial", "Trial"),
+    ("starter_5000", "Starter - N5,000"),
+    ("growth_10000", "Growth - N10,000"),
+    ("pro_20000", "Pro - N20,000"),
+]
 
 class Business(models.Model):
     name = models.CharField(max_length=200)
@@ -7,9 +16,19 @@ class Business(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     subscription_end = models.DateField(null=True, blank=True)
+    trial_started_at = models.DateField(null=True, blank=True)
+    trial_ends_at = models.DateField(null=True, blank=True)
+    last_trial_reminder_at = models.DateField(null=True, blank=True)
+    subscription_plan = models.CharField(max_length=20, choices=SUBSCRIPTION_PLAN_CHOICES, default="trial")
 
     def __str__(self):
         return self.name
+
+    @property
+    def trial_days_left(self):
+        if not self.trial_ends_at:
+            return None
+        return (self.trial_ends_at - timezone.localdate()).days
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")

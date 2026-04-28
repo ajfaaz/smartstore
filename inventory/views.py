@@ -1,11 +1,15 @@
 import json
 from decimal import Decimal
+from datetime import timedelta
 
 from django import forms
+from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import F, Sum
 from django.db.models.functions import TruncDate
@@ -96,9 +100,21 @@ def dashboard(request):
             return redirect('/api/platform-admin/')
         return HttpResponse("<h1>Access Denied</h1><p>Your account is not linked to any business.</p>", status=403)
     
-    # Subscription Check
+    # Trial/subscription enforcement
+    if business.subscription_plan == "trial" and business.trial_ends_at and business.trial_ends_at < now().date():
+        business.is_active = False
+        business.save(update_fields=["is_active"])
+
     if not business.is_active:
         return HttpResponse("<h1>Subscription Suspended</h1><p>Please contact support to reactivate your account.</p>", status=403)
+
+    if business.subscription_plan == "trial" and business.trial_ends_at:
+        days_left = (business.trial_ends_at - now().date()).days
+        if days_left >= 0:
+            if days_left == 0:
+                messages.warning(request, "Your trial ends today. Subscribe to keep your store active.")
+            elif days_left <= 3:
+                messages.warning(request, f"Your trial ends in {days_left} day(s). Please subscribe soon.")
     
     total_products = Product.objects.filter(business=business).count()
 
@@ -353,10 +369,85 @@ class StoreOnboardingForm(forms.Form):
     subscription_end = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
 
 
+class TrialRegistrationForm(forms.Form):
+    business_name = forms.CharField(max_length=200)
+    username = forms.CharField(max_length=150)
+    email = forms.EmailField()
+    password = forms.CharField(widget=forms.PasswordInput)
+    confirm_password = forms.CharField(widget=forms.PasswordInput)
+
+    def clean_username(self):
+        username = self.cleaned_data["username"].strip()
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("Username already exists.")
+        return username
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get("password") != cleaned_data.get("confirm_password"):
+            self.add_error("confirm_password", "Passwords do not match.")
+        return cleaned_data
+
+
+def register_trial(request):
+    if request.user.is_authenticated:
+        return redirect("/api/dashboard/")
+
+    if request.method == "POST":
+        form = TrialRegistrationForm(request.POST)
+        if form.is_valid():
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    username=form.cleaned_data["username"].strip(),
+                    email=form.cleaned_data["email"].strip(),
+                    password=form.cleaned_data["password"],
+                    is_staff=True,
+                )
+                today = now().date()
+                trial_end = today + timedelta(days=7)
+                business = Business.objects.create(
+                    name=form.cleaned_data["business_name"].strip(),
+                    owner=user,
+                    is_active=True,
+                    subscription_plan="trial",
+                    trial_started_at=today,
+                    trial_ends_at=trial_end,
+                    subscription_end=trial_end,
+                )
+                Profile.objects.create(user=user, business=business)
+
+            messages.success(request, "Your 7-day trial is active. Please log in to continue.")
+            return redirect("/accounts/login/")
+    else:
+        form = TrialRegistrationForm()
+
+    return render(request, "inventory/register_trial.html", {"form": form})
+
+
 @user_passes_test(lambda u: u.is_superuser)
 def platform_admin_dashboard(request):
     businesses = Business.objects.all().order_by('-created_at')
-    return render(request, 'inventory/platform_admin.html', {'businesses': businesses})
+    plan_catalog = [
+        {
+            "code": "starter_5000",
+            "name": "Starter",
+            "amount": 5000,
+            "paystack_url": getattr(settings, "PAYSTACK_STARTER_URL", ""),
+        },
+        {
+            "code": "growth_10000",
+            "name": "Growth",
+            "amount": 10000,
+            "paystack_url": getattr(settings, "PAYSTACK_GROWTH_URL", ""),
+        },
+        {
+            "code": "pro_20000",
+            "name": "Pro",
+            "amount": 20000,
+            "paystack_url": getattr(settings, "PAYSTACK_PRO_URL", ""),
+        },
+    ]
+    return render(request, 'inventory/platform_admin.html', {'businesses': businesses, "plan_catalog": plan_catalog})
 
 
 @user_passes_test(lambda u: u.is_superuser)
@@ -376,7 +467,10 @@ def store_create(request):
                 business = Business.objects.create(
                     name=form.cleaned_data['business_name'],
                     owner=user,
-                    subscription_end=form.cleaned_data['subscription_end']
+                    subscription_end=form.cleaned_data['subscription_end'],
+                    subscription_plan="trial",
+                    trial_started_at=now().date(),
+                    trial_ends_at=(now().date() + timedelta(days=7)),
                 )
                 # Link them
                 Profile.objects.create(user=user, business=business)
@@ -392,3 +486,24 @@ def toggle_business_status(request, business_id):
     business.is_active = not business.is_active
     business.save()
     return redirect('/api/platform-admin/')
+
+
+def send_trial_reminder_email(business):
+    if not business.owner.email:
+        return
+    days_left = (business.trial_ends_at - now().date()).days
+    if days_left < 0:
+        return
+    send_mail(
+        subject="SmartStore Trial Reminder",
+        message=(
+            f"Hello {business.owner.username},\n\n"
+            f"Your SmartStore trial for '{business.name}' ends in {days_left} day(s) "
+            f"on {business.trial_ends_at}.\n"
+            "Please subscribe to continue using your store without interruption.\n\n"
+            "Plans: N5,000 / N10,000 / N20,000."
+        ),
+        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@smartstore.local"),
+        recipient_list=[business.owner.email],
+        fail_silently=True,
+    )

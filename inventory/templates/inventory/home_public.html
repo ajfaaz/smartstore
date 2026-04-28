@@ -1,148 +1,242 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SmartStore</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartStore | Modern Shop Management</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #0f172a;
+            --accent: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            background-color: var(--light);
+            background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%), 
+                              radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+            color: #1e293b;
+            line-height: 1.6;
+        }
 
-<style>
-body {
-    font-family: 'Poppins', sans-serif;
-    margin: 0;
-    background: #f8fafc;
-    color: #1e293b;
-}
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+            color: white;
+            padding: 100px 20px;
+            text-align: center;
+            clip-path: ellipse(150% 100% at 50% 0%);
+        }
 
-.hero {
-    background: linear-gradient(135deg, #0a2540, #0f9d58);
-    color: white;
-    padding: 64px 20px;
-    text-align: center;
-}
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+            line-height: 1.2;
+        }
 
-.hero h1 {
-    font-size: 34px;
-    margin-bottom: 10px;
-}
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
 
-.hero p {
-    font-size: 16px;
-    opacity: 0.92;
-}
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 16px 32px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 10px;
+        }
 
-.btn {
-    display: inline-block;
-    padding: 12px 20px;
-    border-radius: 10px;
-    text-decoration: none;
-    margin: 10px;
-    font-weight: 600;
-}
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
 
-.btn-primary { background: #0f9d58; color: white; }
-.btn-whatsapp { background: #25D366; color: white; }
+        .btn-primary { background: white; color: var(--primary); }
+        .btn-whatsapp { background: #25D366; color: white; }
 
-.section {
-    padding: 42px 20px;
-    text-align: center;
-}
+        /* Sections */
+        .section {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 15px;
-    max-width: 1100px;
-    margin: 0 auto;
-}
+        .section h2 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 50px;
+            color: var(--secondary);
+            position: relative;
+        }
 
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-}
+        .section h2::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background: var(--accent);
+            margin: 15px auto 0;
+            border-radius: 2px;
+        }
 
-.cta {
-    background: #0f172a;
-    color: white;
-    padding: 42px 20px;
-    text-align: center;
-}
+        /* Grid & Cards */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
 
-.footer {
-    background: #020617;
-    color: white;
-    padding: 20px;
-    text-align: center;
-    font-size: 14px;
-}
+        .card {
+            background: white;
+            padding: 35px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
 
-@media (max-width: 700px) {
-    .hero h1 {
-        font-size: 28px;
-    }
-    .btn {
-        display: block;
-        margin: 10px auto;
-        max-width: 260px;
-    }
-}
-</style>
+        .card:hover {
+            transform: scale(1.05);
+            border-color: var(--primary);
+        }
+
+        .problem-card { border-top: 5px solid var(--danger); }
+        .feature-card { border-top: 5px solid var(--accent); }
+        .benefit-card { border-top: 5px solid var(--warning); }
+
+        .icon-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        /* CTA Section */
+        .cta {
+            background: var(--secondary);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+            border-radius: 0;
+            margin-top: 50px;
+        }
+
+        .cta h2 { color: white; margin-bottom: 20px; }
+        .cta h2::after { background: var(--warning); }
+
+        /* Footer */
+        .footer {
+            background: #020617;
+            color: #94a3b8;
+            padding: 40px 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .footer b { color: white; }
+
+        @media (max-width: 700px) {
+            .hero { padding: 60px 20px; }
+            .btn { width: 100%; box-sizing: border-box; }
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="hero">
-    <h1>Stop Losing Money in Your Shop</h1>
-    <p>Track your sales, monitor staff, and know your profit daily</p>
+    <h1>Stop Losing Money <br>in Your Shop</h1>
+    <p>The smartest way to track sales, monitor staff activity, and calculate your daily profit in real-time.</p>
 
-    <a href="/accounts/login/" class="btn btn-primary">Try Free Demo</a>
+    <a href="/api/register/" class="btn btn-primary">Try Free Demo</a>
+    <a href="/accounts/login/" class="btn btn-primary" style="background:#1d4ed8;">Login</a>
     <a href="https://wa.me/2349017862785" class="btn btn-whatsapp">Chat on WhatsApp</a>
 </div>
 
 <div class="section">
-    <h2>Are you facing these problems?</h2>
+    <h2>Facing these problems?</h2>
     <div class="grid">
-        <div class="card">Staff hiding real sales</div>
-        <div class="card">Stock disappearing</div>
-        <div class="card">No clear profit tracking</div>
-        <div class="card">Manual record stress</div>
+        <div class="card problem-card">
+            <span style="font-size: 40px;">🕵️‍♂️</span>
+            <h3>Staff Dishonesty</h3>
+            <p>Tired of staff hiding real sales or giving products away for free?</p>
+        </div>
+        <div class="card problem-card">
+            <span style="font-size: 40px;">📉</span>
+            <h3>Stock Leakage</h3>
+            <p>Notice stock disappearing without any record of where it went?</p>
+        </div>
+        <div class="card problem-card">
+            <span style="font-size: 40px;">😵‍💫</span>
+            <h3>Manual Records</h3>
+            <p>Spending hours with pen and paper only to find errors in your math?</p>
+        </div>
     </div>
 </div>
 
-<div class="section">
+<div class="section" style="background: rgba(255,255,255,0.5); border-radius: 50px;">
     <h2>SmartStore Features</h2>
     <div class="grid">
-        <div class="card">Track every sale instantly</div>
-        <div class="card">Auto stock updates</div>
-        <div class="card">Monitor staff activity</div>
-        <div class="card">Print receipts</div>
-        <div class="card">Works on phone</div>
-        <div class="card">Fast and easy to use</div>
+        <div class="card feature-card"><b>🚀 Instant Tracking</b><br>Record sales as they happen.</div>
+        <div class="card feature-card"><b>📦 Auto Stock</b><br>Inventory updates automatically.</div>
+        <div class="card feature-card"><b>👥 Staff Monitor</b><br>See who sold what and when.</div>
+        <div class="card feature-card"><b>🧾 Digital Receipts</b><br>Print or send receipts via SMS/WhatsApp.</div>
+        <div class="card feature-card"><b>📱 Mobile First</b><br>Manage your shop from anywhere.</div>
+        <div class="card feature-card"><b>⚡ Fast Setup</b><br>Easy to use, even for non-techies.</div>
     </div>
 </div>
 
 <div class="section">
-    <h2>Why Shop Owners Love SmartStore</h2>
+    <h2>Why Owners Love Us</h2>
     <div class="grid">
-        <div class="card">Know your real daily profit</div>
-        <div class="card">Reduce staff theft</div>
-        <div class="card">Save time</div>
-        <div class="card">Grow your business</div>
+        <div class="card benefit-card">
+            <h3>Real Daily Profit</h3>
+            <p>Know exactly how much you made after expenses every single day.</p>
+        </div>
+        <div class="card benefit-card">
+            <h3>Peace of Mind</h3>
+            <p>Travel or stay home knowing your business is safe from theft.</p>
+        </div>
     </div>
 </div>
 
 <div class="cta">
     <h2>FREE Setup + 7 Days Trial</h2>
-    <p>Start using SmartStore today with zero risk.</p>
+    <p>Join hundreds of smart shop owners growing their business today.</p>
     <a href="https://wa.me/2349017862785" class="btn btn-whatsapp">Get Started Now</a>
 </div>
 
 <div class="footer">
-    <p>SmartStore by ArewaNet Ventures</p>
-    <p>09017862785</p>
+    <p><b>SmartStore</b> by ArewaNet Ventures</p>
+    <p>📍 Support: 09017862785</p>
+    <p style="margin-top:20px; opacity: 0.5;">&copy; 2024 All Rights Reserved</p>
 </div>
 
 </body>

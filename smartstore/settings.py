@@ -33,7 +33,7 @@ def _env_list(name, default=''):
 SECRET_KEY = os.getenv('SECRET_KEY', 'change-this-secret-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = _env_flag('DEBUG', False)
+DEBUG = _env_flag('DEBUG', True)
 
 ALLOWED_HOSTS = _env_list(
     'ALLOWED_HOSTS',
@@ -155,6 +155,25 @@ CSRF_TRUSTED_ORIGINS = _env_list(
     'CSRF_TRUSTED_ORIGINS',
     'https://smartstore.arewanetventures.com',
 )
+
+# Email settings (used for trial reminders)
+EMAIL_HOST = os.getenv('EMAIL_HOST', '').strip()
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '').strip()
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = _env_flag('EMAIL_USE_TLS', True)
+EMAIL_USE_SSL = _env_flag('EMAIL_USE_SSL', False)
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@smartstore.local')
+
+if EMAIL_HOST:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Paystack plan links (shown in platform admin)
+PAYSTACK_STARTER_URL = os.getenv('PAYSTACK_STARTER_URL', '').strip()
+PAYSTACK_GROWTH_URL = os.getenv('PAYSTACK_GROWTH_URL', '').strip()
+PAYSTACK_PRO_URL = os.getenv('PAYSTACK_PRO_URL', '').strip()
 
 # Authentication Redirects
 LOGIN_REDIRECT_URL = '/api/dashboard/'

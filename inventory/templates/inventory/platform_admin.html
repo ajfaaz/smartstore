@@ -1,20 +1,60 @@
 {% extends 'inventory/base.html' %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center;">
-    <h1>🌐 Platform Administration</h1>
+<style>
+.table-wrap { overflow-x: auto; }
+.plan-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+}
+.plan-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+}
+.plan-price {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f9d58;
+}
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+    <h1>Platform Administration</h1>
     <a href="/api/platform-admin/add-store/" style="text-decoration: none;">
         <button style="width: auto; padding: 10px 20px;">+ Onboard New Store</button>
     </a>
 </div>
 
 <div class="card">
+    <h3>Paystack Payment Plans</h3>
+    <div class="plan-grid">
+        {% for plan in plan_catalog %}
+        <div class="plan-card">
+            <div style="font-weight:600;">{{ plan.name }}</div>
+            <div class="plan-price">₦{{ plan.amount }}</div>
+            {% if plan.paystack_url %}
+            <a href="{{ plan.paystack_url }}" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;">Open Paystack Payment Link</a>
+            {% else %}
+            <p style="color:#64748b;margin:10px 0 0;">Set payment URL in environment to enable checkout.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-wrap">
     <table>
         <thead>
             <tr>
                 <th>Store Name</th>
                 <th>Owner</th>
                 <th>Joined</th>
+                <th>Plan</th>
+                <th>Trial Ends</th>
                 <th>Subscription End</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -26,18 +66,21 @@
                 <td><strong>{{ business.name }}</strong></td>
                 <td>{{ business.owner.username }}</td>
                 <td>{{ business.created_at|date:"Y-m-d" }}</td>
-                <td>{{ business.subscription_end|default:"Lifetime" }}</td>
+                <td>{{ business.get_subscription_plan_display }}</td>
+                <td>{{ business.trial_ends_at|default:"-" }}</td>
+                <td>{{ business.subscription_end|default:"-" }}</td>
                 <td>
                     <span class="badge {% if business.is_active %}badge-success{% else %}badge-danger{% endif %}">
                         {% if business.is_active %}Active{% else %}Suspended{% endif %}
                     </span>
                 </td>
                 <td>
-                    <a href="/api/platform-admin/toggle-status/{{ business.id }}/" style="color: #3b82f6; text-decoration: none; font-weight: bold;">🔄 Toggle Status</a>
+                    <a href="/api/platform-admin/toggle-status/{{ business.id }}/" style="color: #3b82f6; text-decoration: none; font-weight: bold;">Toggle Status</a>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endblock %}
